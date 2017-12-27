@@ -1,0 +1,101 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>animation</title>
+    <meta charset="utf-8" />
+    <script type='text/javascript' src='http://localhost:20000/maptalks.js'></script>
+    <script type='text/javascript' src='../node_modules/cesium/Build/CesiumUnminified/Cesium.js'></script>
+    <script type='text/javascript' src='../dist/maptalks.cesium.js'> </script>
+    <style type="text/css">
+        html, body {
+            margin: 0px;
+            height: 100%;
+            width: 100%;
+        }
+
+        #map {
+            width: 800px;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+</body>
+<script type="text/javascript">
+    var map = new maptalks.Map("map", {
+        center: [114.24536696944392, 30.57413292546562], //[-107.42203786989575, 34.66846940689112]
+        zoom: 15,
+        centerCross : true,
+        zoomBackground: false,
+    //    view: {
+    //        projection: 'EPSG:3857'
+    //    }
+        /*,
+        baseLayer: new maptalks.TileLayer('base', {
+            baseLayerRenderer: 'dom',
+            tileSystem: [1, -1, -180, 90],
+            urlTemplate: 'http://192.168.100.96:9010/XG_VEC/DataServer?T=tile&x={x}&y={y}&l={z}'
+        })*/
+    });
+
+    var cesiumLayer = new maptalks.CesiumLayer('cesium').addTo(map);
+
+    const terrainProvider = new Cesium.CesiumTerrainProvider({
+        url: '//assets.agi.com/stk-terrain/world',
+        requestVertexNormals: true
+    });
+    // cesiumLayer.getCesiumScene().terrainProvider = terrainProvider;
+    cesiumLayer.getCesiumScene().imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+        url : 'https://dev.virtualearth.net',
+        mapStyle: Cesium.BingMapsStyle.AERIAL // Can also use Cesium.BingMapsStyle.ROAD
+    }));
+
+    // dc.add({
+    //     position : Cesium.Cartesian3.fromDegrees(114.24536696944392, 30.57413292546562),
+    //     billboard : {
+    //         image : 'test.png', // default: undefined
+    //         show : true, // default
+    //         // pixelOffset : new Cesium.Cartesian2(0, -50), // default: (0, 0)
+    //         eyeOffset : new Cesium.Cartesian3(0.0, 0.0, 0.0), // default
+    //         horizontalOrigin : Cesium.HorizontalOrigin.CENTER, // default
+    //         // verticalOrigin : Cesium.VerticalOrigin.BOTTOM, // default: CENTER
+    //         // scale : 2.0, // default: 1.0
+    //         // color : Cesium.Color.LIME, // default: WHITE
+    //         // rotation : Cesium.Math.PI_OVER_FOUR, // default: 0.0
+    //         // alignedAxis : Cesium.Cartesian3.ZERO, // default
+    //         // width : 100, // default: undefined
+    //         // height : 25 // default: undefined
+    //     }
+    // });
+    var collection = new Cesium.PrimitiveCollection();
+    var billboards =new Cesium.BillboardCollection();
+    billboards.add({
+        position : Cesium.Cartesian3.fromDegrees(114.24536696944392, 30.57413292546562),
+        image : './test.png',
+        width : 60,
+        height : 60
+    });
+    collection.add(billboards);
+    cesiumLayer.getCesiumScene().primitives.add(collection);
+
+    var layer = new maptalks.VectorLayer('v');
+    layer.addGeometry(new maptalks.Marker(map.getCenter()/* , {
+        symbol : {
+            'textFaceName' : '"microsoft yahei",arial,sans-serif',
+            'textName' : 'MapTalks',
+            'textSize'          : 40,
+            'textFill'          : '#34495e',
+            'textOpacity'       : 1,
+            'textHaloFill'      : '#fff',
+            'textHaloRadius'    : 5
+        }
+    } */)).addTo(map);
+
+    // var layer = new maptalks.TileLayer('t', {
+    //     'urlTemplate' : 'http://t{s}.tianditu.com/DataServer?T=cva_w&x={x}&y={y}&l={z}',
+    //     'subdomains'  : ['1','2','3','4','5']
+    // }).addTo(map);
+</script>
+</html>

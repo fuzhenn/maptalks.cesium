@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>animation</title>
     <meta charset="utf-8" />
-    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/maptalks@0.36.2/dist/maptalks.min.js'></script>
+    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/maptalks@>=0.37.0-alpha.0/dist/maptalks.min.js'></script>
     <script type='text/javascript' src='../node_modules/cesium/Build/CesiumUnminified/Cesium.js'></script>
     <script type='text/javascript' src='../dist/maptalks.cesium.js'> </script>
     <style type="text/css">
@@ -24,6 +24,7 @@
     <div id="map"></div>
 </body>
 <script type="text/javascript">
+    Cesium.BingMapsApi.defaultKey = 'ApD3P1iMWEcs7okcQD2-idlF4bgGLMqF_p6ZKYovVeX80cmjpWzR5EZs9E_I2tXn';
     var map = new maptalks.Map("map", {
         center: [114.24536696944392, 30.57413292546562], //[-107.42203786989575, 34.66846940689112]
         zoom: 15,

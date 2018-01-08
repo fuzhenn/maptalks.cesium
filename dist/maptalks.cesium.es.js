@@ -6,11 +6,8 @@
 /*!
  * requires maptalks@<2.0.0 
  */
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('maptalks'), require('Cesium')) :
-	typeof define === 'function' && define.amd ? define(['exports', 'maptalks', 'Cesium'], factory) :
-	(factory((global.maptalks = global.maptalks || {}),global.maptalks,global.Cesium));
-}(this, (function (exports,maptalks,Cesium) { 'use strict';
+import { CanvasLayer, Util, renderer } from 'maptalks';
+import { Cartesian3, Cartographic, Color, Ellipsoid, Globe, JulianDate, Scene, SkyAtmosphere } from 'Cesium';
 
 function _defaults(obj, defaults) { var keys = Object.getOwnPropertyNames(defaults); for (var i = 0; i < keys.length; i++) { var key = keys[i]; var value = Object.getOwnPropertyDescriptor(defaults, key); if (value && value.configurable && obj[key] === undefined) { Object.defineProperty(obj, key, value); } } return obj; }
 
@@ -50,7 +47,7 @@ var CesiumLayer = function (_maptalks$CanvasLayer) {
             return 0;
         }
         var camera = this.getCesiumScene().camera;
-        var carto = Cesium.Ellipsoid.WGS84.cartesianToCartographic(camera.position);
+        var carto = Ellipsoid.WGS84.cartesianToCartographic(camera.position);
 
         return carto.height;
     };
@@ -64,7 +61,7 @@ var CesiumLayer = function (_maptalks$CanvasLayer) {
     };
 
     return CesiumLayer;
-}(maptalks.CanvasLayer);
+}(CanvasLayer);
 
 CesiumLayer.mergeOptions(options);
 
@@ -109,17 +106,17 @@ var CeisumLayerRenderer = function (_maptalks$renderer$Ca) {
         var container = document.createElement('div');
         container.appendChild(this.canvas);
         var sceneOptions = this.layer.options.sceneOptions || {};
-        sceneOptions = maptalks.Util.extend(sceneOptions, {
+        sceneOptions = Util.extend(sceneOptions, {
             canvas: this.canvas,
             scene3DOnly: true
         });
-        this.scene = new Cesium.Scene(sceneOptions);
-        this.scene.camera.constrainedAxis = Cesium.Cartesian3.UNIT_Z;
+        this.scene = new Scene(sceneOptions);
+        this.scene.camera.constrainedAxis = Cartesian3.UNIT_Z;
         this.scene.camera.fov = Math.PI / 2; //90
-        this.globe = new Cesium.Globe(Cesium.Ellipsoid.WGS84);
-        this.globe.baseColor = Cesium.Color.WHITE;
+        this.globe = new Globe(Ellipsoid.WGS84);
+        this.globe.baseColor = Color.WHITE;
         this.scene.globe = this.globe;
-        this.scene.skyAtmosphere = new Cesium.SkyAtmosphere();
+        this.scene.skyAtmosphere = new SkyAtmosphere();
         //ol.proj.Units.METERS_PER_UNIT[ol.proj.Units.DEGREES] = 2 * Math.PI * 6370997 / 360;
     };
 
@@ -154,7 +151,7 @@ var CeisumLayerRenderer = function (_maptalks$renderer$Ca) {
 
     CeisumLayerRenderer.prototype._renderCesiumScene = function _renderCesiumScene() {
         this.scene.initializeFrame();
-        this.scene.render(Cesium.JulianDate.now());
+        this.scene.render(JulianDate.now());
     };
 
     CeisumLayerRenderer.prototype._locateCamera = function _locateCamera() {
@@ -166,13 +163,13 @@ var CeisumLayerRenderer = function (_maptalks$renderer$Ca) {
         }
         var ll = center.toArray();
 
-        var carto = new Cesium.Cartographic(toRadians(ll[0]), toRadians(ll[1]));
+        var carto = new Cartographic(toRadians(ll[0]), toRadians(ll[1]));
         if (scene.globe) {
             var height = scene.globe.getHeight(carto);
             carto.height = height || 0;
         }
         // carto.height = 0;
-        var destination = Cesium.Ellipsoid.WGS84.cartographicToCartesian(carto);
+        var destination = Ellipsoid.WGS84.cartographicToCartesian(carto);
         var pitch = toRadians(map.getPitch());
         /** @type {Cesium.optionsOrientation} */
         var orientation = {
@@ -239,7 +236,7 @@ var CeisumLayerRenderer = function (_maptalks$renderer$Ca) {
     };
 
     return CeisumLayerRenderer;
-}(maptalks.renderer.CanvasRenderer);
+}(renderer.CanvasRenderer);
 
 CesiumLayer.registerRenderer('canvas', CeisumLayerRenderer);
 
@@ -247,10 +244,6 @@ function toRadians(d) {
     return d * Math.PI / 180;
 }
 
-exports.CesiumLayer = CesiumLayer;
-
-Object.defineProperty(exports, '__esModule', { value: true });
+export { CesiumLayer };
 
 typeof console !== 'undefined' && console.log('maptalks.cesium v0.0.0, requires maptalks@<2.0.0.');
-
-})));

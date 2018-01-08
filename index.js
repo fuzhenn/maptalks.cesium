@@ -70,28 +70,7 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
         this.completeRender();
     }
 
-    createCanvas() {
-        if (this.canvas) {
-            return;
-        }
-        const map = this.getMap();
-        const size = map.getSize();
-        const r = maptalks.Browser.retina ? 2 : 1,
-            w = r * size.width,
-            h = r * size.height;
-        if (this.layer._canvas) {
-            const canvas = this.layer._canvas;
-            canvas.width = w;
-            canvas.height = h;
-            if (canvas.style) {
-                canvas.style.width = size.width + 'px';
-                canvas.style.height = size.height + 'px';
-            }
-            this.canvas = this.layer._canvas;
-        } else {
-            this.canvas = maptalks.Canvas.createCanvas(w, h, map.CanvasClass);
-        }
-
+    createContext() {
         const container = document.createElement('div');
         container.appendChild(this.canvas);
         let sceneOptions = this.layer.options.sceneOptions || {};
@@ -106,12 +85,6 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
         this.globe.baseColor = Cesium.Color.WHITE;
         this.scene.globe = this.globe;
         this.scene.skyAtmosphere = new Cesium.SkyAtmosphere();
-        this.onCanvasCreate();
-
-        this.layer.fire('canvascreate', {
-            'context' : this.context,
-            'gl' : this.gl
-        });
         //ol.proj.Units.METERS_PER_UNIT[ol.proj.Units.DEGREES] = 2 * Math.PI * 6370997 / 360;
     }
 

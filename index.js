@@ -80,7 +80,6 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
         });
         this.scene = new Cesium.Scene(sceneOptions);
         this.scene.camera.constrainedAxis = Cesium.Cartesian3.UNIT_Z;
-        this.scene.camera.fov = Math.PI / 2; //90
         this.globe = new Cesium.Globe(Cesium.Ellipsoid.WGS84);
         this.globe.baseColor = Cesium.Color.WHITE;
         this.scene.globe = this.globe;
@@ -129,7 +128,19 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
         if (!center) {
             return;
         }
+
+        let fov;
+        if (this.canvas.height > this.canvas.width) {
+            fov = map.getFov() * Math.PI / 180;
+        } else {
+            fov = map.getFov() * Math.PI / 180 * this.canvas.width / this.canvas.height;
+        }
+        scene.camera.frustum.fov = fov;
+
         const ll = center.toArray();
+        const pitch = toRadians(map.getPitch());
+
+        const distance = this._calcDistance(map);
 
         const carto = new Cesium.Cartographic(toRadians(ll[0]),
             toRadians(ll[1]));
@@ -137,9 +148,8 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
             const height = scene.globe.getHeight(carto);
             carto.height = height || 0;
         }
-        // carto.height = 0;
         const destination = Cesium.Ellipsoid.WGS84.cartographicToCartesian(carto);
-        const pitch = toRadians(map.getPitch());
+
         /** @type {Cesium.optionsOrientation} */
         const orientation = {
             pitch : pitch - Math.PI / 2,
@@ -150,56 +160,18 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
             destination,
             orientation
         });
-        // const cameraPosition = map.pointToCoord(new maptalks.Coordinate(map.cameraPosition), map.getGLZoom());
-        // const resolution = map.getResolution();
-        // const distance = this._calcDistanceForResolution(
-        //     // resolution || 0, toRadians(ll[1]));
-        //     resolution, map);
-        const distance = this._calcDistance(map);
 
         scene.camera.moveBackward(distance);
     }
 
     _calcDistance(map) {
         const canvas = this.canvas;
-        const fovy = this.scene.camera.frustum.fov; // horizontal field of view
+        const fov = this.scene.camera.frustum.fov; // horizontal field of view
 
         const c = map.getCenter();
-        const b = map.locateByPoint(c, canvas.width, 0);
-        const requiredDistance = (map.computeLength(c, b) / 2) / Math.tan(fovy / 2);
-
-        // const pitch = toRadians(map.getPitch());
-        return requiredDistance;
-    }
-
-    _calcDistanceForResolution2(resolution, latitude) {
-        const canvas = this.canvas;
-        const fovy = this.scene.camera.frustum.fov; // vertical field of view
-        const metersPerUnit = resolution;//2 * Math.PI * 6370997 / 360;
-
-        // number of "map units" visible in 2D (vertically)
-        const visibleMapUnits = canvas.width;
-
-        // The metersPerUnit does not take latitude into account, but it should
-        // be lower with increasing latitude -- we have to compensate.
-        // In 3D it is not possible to maintain the resolution at more than one point,
-        // so it only makes sense to use the latitude of the "target" point.
-        const relativeCircumference = Math.cos(Math.abs(latitude));
-
-        // how many meters should be visible in 3D
-        const visibleMeters = visibleMapUnits * metersPerUnit * relativeCircumference;
-
-        // distance required to view the calculated length in meters
-        //
-        //  fovy/2
-        //    |\
-        //  x | \
-        //    |--\
-        // visibleMeters/2
-        const requiredDistance = (visibleMeters / 2) / Math.tan(fovy / 2);
-
-        // NOTE: This calculation is not absolutely precise, because metersPerUnit
-        // is a great simplification. It does not take ellipsoid/terrain into account.
+        const b = map.locateByPoint(c, -canvas.width / 2, 0);
+        const e = map.locateByPoint(c, canvas.width / 2, 0);
+        const requiredDistance = (map.computeLength(e, b) / 2) / Math.tan(fov / 2);
 
         return requiredDistance;
     }

@@ -40,6 +40,8 @@ export class CesiumLayer extends maptalks.CanvasLayer {
 
 CesiumLayer.mergeOptions(options);
 
+const backColor = [112, 112, 112, 255];
+
 class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
 
     needToRedraw() {
@@ -79,18 +81,53 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
             scene3DOnly : true
         });
         this.scene = new Cesium.Scene(sceneOptions);
+        this.scene.fog.enabled = false;
+        this.scene.backgroundColor = new Cesium.Color(backColor[0] / 255, backColor[1] / 255, backColor[2] / 255, 1);
         this.scene.camera.constrainedAxis = Cesium.Cartesian3.UNIT_Z;
         this.globe = new Cesium.Globe(Cesium.Ellipsoid.WGS84);
-        this.globe.baseColor = Cesium.Color.WHITE;
+        this.globe.baseColor = new Cesium.Color(backColor[0] / 255, backColor[1] / 255, backColor[2] / 255, 1);
         this.scene.globe = this.globe;
-        this.scene.skyAtmosphere = new Cesium.SkyAtmosphere();
-        //ol.proj.Units.METERS_PER_UNIT[ol.proj.Units.DEGREES] = 2 * Math.PI * 6370997 / 360;
+        // this.scene.globe.show = false;
+        // this.scene.skyAtmosphere = new Cesium.SkyAtmosphere();
     }
 
     clearCanvas() {
         if (!this.canvas) {
             return;
         }
+    }
+
+    getCanvasImage() {
+        const canvasImage = super.getCanvasImage();
+        if (!canvasImage || !canvasImage.image) {
+            return canvasImage;
+        }
+        const canvas = canvasImage.image;
+        if (!this.buffer) {
+            this.buffer = document.createElement('canvas');
+        }
+        const buffer = this.buffer;
+        const w = buffer.width = canvas.width;
+        const h = buffer.height = canvas.height;
+        const ctx = buffer.getContext('2d');
+
+        ctx.drawImage(canvas, 0, 0);
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const sourceData = imgData.data;
+        for (let i = 0, l = sourceData.length; i < l; i += 4) {
+            if (sourceData[i] === backColor[0] && sourceData[i + 1] === backColor[1] &&
+                sourceData[i + 2] === backColor[2] /* && sourceData[i + 3] === backColor[3] */) {
+                sourceData[i + 3] = 0;
+            } else if (this.layer.options['gray']) {
+                const gray = [sourceData[i] + sourceData[i + 1] + sourceData[i + 2]] / 3;
+                sourceData[i] = gray;
+                sourceData[i + 1] = gray;
+                sourceData[i + 2] = gray;
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        canvasImage.image = buffer;
+        return canvasImage;
     }
 
     resizeCanvas(canvasSize) {

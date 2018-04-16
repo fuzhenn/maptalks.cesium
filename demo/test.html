@@ -2,11 +2,10 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>animation</title>
+    <title>maptalks + cesium</title>
     <meta charset="utf-8" />
-    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.js'></script>
+
     <script type='text/javascript' src='../node_modules/cesium/Build/CesiumUnminified/Cesium.js'></script>
-    <script type='text/javascript' src='../dist/maptalks.cesium.js'> </script>
     <style type="text/css">
         html, body {
             margin: 0px;
@@ -17,39 +16,46 @@
         #map {
             width: 800px;
             height: 600px;
+            background-color:aliceblue;
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
 </body>
+<script type='text/javascript' src='https://cdn.jsdelivr.net/npm/maptalks@0.39.5/dist/maptalks.min.js'></script>
+<script type='text/javascript' src='../dist/maptalks.cesium.js'> </script>
 <script type="text/javascript">
     Cesium.BingMapsApi.defaultKey = 'ApD3P1iMWEcs7okcQD2-idlF4bgGLMqF_p6ZKYovVeX80cmjpWzR5EZs9E_I2tXn';
     var map = new maptalks.Map("map", {
-        center: [121.392825741, 31.1456282355], //[-107.42203786989575, 34.66846940689112]
+        center: [-81.38110, 28.53711],//[-1.25968, 51.74625],//[121.392825741, 31.1456282355],
         zoom: 15,
-        centerCross : true
+        centerCross : true,
+        baseLayer: new maptalks.TileLayer('base', {
+          urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          subdomains: ['a','b','c','d'],
+          attribution: '&copy; <a href="http://osm.org">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/">CARTO</a>'
+        })
     });
 
-    var cesiumLayer = new maptalks.CesiumLayer('cesium').addTo(map);
+    var cesiumLayer = new maptalks.CesiumLayer('cesium', { gray : false }).addTo(map);
+    //获取cesium scene对象
     var scene = cesiumLayer.getCesiumScene();
 
-    var terrainProvider = new Cesium.CesiumTerrainProvider({
-        url: '//assets.agi.com/stk-terrain/world',
-        requestVertexNormals: true
+    // 添加卫片底图
+    // scene.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+    //     url : 'https://dev.virtualearth.net',
+    //     mapStyle: Cesium.BingMapsStyle.AERIAL // Can also use Cesium.BingMapsStyle.ROAD
+    // }));
+
+    //数据来源：http://web3d.smartearth.cn/
+
+    //添加3d tiles
+    var tileset = new Cesium.Cesium3DTileset({
+        url : 'http://101.201.72.138:8686/SG/b3dm/Orlando.397440/'
     });
 
-
-    // 添加卫片底图
-    scene.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
-        url : 'https://dev.virtualearth.net',
-        mapStyle: Cesium.BingMapsStyle.AERIAL // Can also use Cesium.BingMapsStyle.ROAD
-    }));
-
-    var tileset = scene.primitives.add(new Cesium.Cesium3DTileset({
-        url: 'http://101.201.72.138:8686/SG/b3dm/niujin_pm2686_1107_Build_4.397439/158/4/'
-    }));
-
+    scene.primitives.add(tileset);
 
     var layer = new maptalks.VectorLayer('v');
     layer.addGeometry(new maptalks.Marker(map.getCenter())).addTo(map);

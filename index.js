@@ -166,11 +166,10 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
             return;
         }
 
-        let fov;
-        if (this.canvas.height > this.canvas.width) {
-            fov = map.getFov() * Math.PI / 180;
-        } else {
-            fov = map.getFov() * Math.PI / 180 * this.canvas.width / this.canvas.height;
+        let fov = map.getFov() * Math.PI / 180;
+        if (this.canvas.height < this.canvas.width) {
+            const aspectRatio = this.canvas.width / this.canvas.height;
+            fov = 2 * Math.atan(Math.tan(0.5 * fov) * aspectRatio);
         }
         scene.camera.frustum.fov = fov;
 

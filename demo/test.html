@@ -1,44 +1,55 @@
 ﻿<!DOCTYPE html>
 <html>
+
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>maptalks + cesium</title>
     <meta charset="utf-8" />
-
-    <script type='text/javascript' src='../node_modules/cesium/Build/CesiumUnminified/Cesium.js'></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.css">
+    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/cesium@1.70.0/Build/Cesium/Cesium.js'></script>
+    <script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/three@0.97.0/examples/js/libs/stats.min.js"></script>
     <style type="text/css">
-        html, body {
+        html,
+        body {
             margin: 0px;
             height: 100%;
             width: 100%;
         }
 
         #map {
-            width: 800px;
-            height: 600px;
-            background-color:aliceblue;
+            width: 1800px;
+            height: 900px;
+            background-color: aliceblue;
         }
     </style>
 </head>
+
 <body>
     <div id="map"></div>
 </body>
-<script type='text/javascript' src='https://cdn.jsdelivr.net/npm/maptalks@0.39.5/dist/maptalks.min.js'></script>
+<script type='text/javascript' src='https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.js'></script>
 <script type='text/javascript' src='../dist/maptalks.cesium.js'> </script>
 <script type="text/javascript">
+
+
     Cesium.BingMapsApi.defaultKey = 'ApD3P1iMWEcs7okcQD2-idlF4bgGLMqF_p6ZKYovVeX80cmjpWzR5EZs9E_I2tXn';
+
     var map = new maptalks.Map("map", {
-        center: [-81.38110, 28.53711],//[-1.25968, 51.74625],//[121.392825741, 31.1456282355],
-        zoom: 15,
-        centerCross : true,
+        "center": [108.95677034431264, 34.21917804542275], "zoom": 18, "pitch": 35.60000000000004, "bearing": -1.8000000000000682,
+        centerCross: true,
         baseLayer: new maptalks.TileLayer('base', {
-          urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-          subdomains: ['a','b','c','d'],
-          attribution: '&copy; <a href="http://osm.org">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/">CARTO</a>'
+            urlTemplate: 'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            subdomains: ['a', 'b', 'c', 'd'],
+            attribution: '&copy; <a href="http://osm.org">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/">CARTO</a>'
         })
     });
 
-    var cesiumLayer = new maptalks.CesiumLayer('cesium', { gray : false }).addTo(map);
+    var cesiumLayer = new maptalks.CesiumLayer('cesium', { gray: false }).addTo(map);
+
+    cesiumLayer.onSelect = function (e) {
+        console.log(e);
+    }
     //获取cesium scene对象
     var scene = cesiumLayer.getCesiumScene();
 
@@ -51,13 +62,133 @@
     //数据来源：http://web3d.smartearth.cn/
 
     //添加3d tiles
-    var tileset = new Cesium.Cesium3DTileset({
-        url : 'http://101.201.72.138:8686/SG/b3dm/Orlando.397440/'
+    // var tileset = new Cesium.Cesium3DTileset({
+    //     url: 'http://earthsdk.com/v/last/Apps/assets/dayanta/tileset.json'
+    // });
+
+
+    var tileset = new maptalks.Cesium3DTileset({
+        url: 'http://earthsdk.com/v/last/Apps/assets/dayanta/tileset.json'
+    });
+    // scene.primitives.add(tileset);
+    cesiumLayer.addPrimitive(tileset);
+
+    tileset.readyPromise.then(function (tileset) {
+        var boundingSphere = tileset.boundingSphere;
+        var cartographic = Cesium.Cartographic.fromCartesian(boundingSphere.center);
+        var surface = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 0.0);
+        var offset = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, -420);
+        var translation = Cesium.Cartesian3.subtract(offset, surface, new Cesium.Cartesian3());
+        tileset.modelMatrix = Cesium.Matrix4.fromTranslation(translation);
+    });
+    // tooltip test
+    tileset.setToolTip('tileset', {
+        showTimeout: 0,
+        eventsPropagation: true,
+        dx: 10
     });
 
-    scene.primitives.add(tileset);
+
+    //infowindow test
+    tileset.setInfoWindow({
+        content: 'hello world,tileset',
+        title: 'message',
+        animationDuration: 0,
+        autoOpenOn: false
+    });
+
+    tileset.on('mousemove', e => {
+        console.log(e);
+    });
+
+
+
+
+
+    var instance = new Cesium.GeometryInstance({
+        geometry: new Cesium.EllipseGeometry({
+            center: Cesium.Cartesian3.fromDegrees(108.95596826753615, 34.21974626347307, 10),
+            semiMinorAxis: 20.0,
+            semiMajorAxis: 30.0,
+            extrudedHeight: 20,
+            rotation: Cesium.Math.PI_OVER_FOUR,
+            vertexFormat: Cesium.VertexFormat.POSITION_AND_ST
+        }),
+        id: maptalks.Util.GUID()
+    });
+    const ellipse = new maptalks.Primitive({
+        geometryInstances: instance,
+        appearance: new Cesium.EllipsoidSurfaceAppearance({
+            material: Cesium.Material.fromType('Checkerboard')
+        })
+    });
+    ellipse.on('click mousemove dbclick contextmenu', (e) => {
+        console.log(e);
+    })
+
+    // tooltip test
+    ellipse.setToolTip('ellipse', {
+        showTimeout: 0,
+        eventsPropagation: true,
+        dx: 10
+    });
+
+
+    //infowindow test
+    ellipse.setInfoWindow({
+        content: 'hello world,ellipse',
+        title: 'message',
+        animationDuration: 0,
+        autoOpenOn: false
+    });
+    cesiumLayer.addPrimitive(ellipse);
+
+
+
+    var instance = new Cesium.GeometryInstance({
+        geometry: new Cesium.CircleGeometry({
+            center: Cesium.Cartesian3.fromDegrees(108.95418724812669, 34.21969525459721, 10),
+            radius: 10,
+            vertexFormat: Cesium.VertexFormat.POSITION_AND_ST
+        }),
+        id: maptalks.Util.GUID()
+    });
+
+    const circle = new maptalks.Primitive({
+        geometryInstances: instance,
+        appearance: new Cesium.EllipsoidSurfaceAppearance({
+            material: Cesium.Material.fromType('Checkerboard')
+        })
+    });
+
+    // tooltip test
+    circle.setToolTip('circle', {
+        showTimeout: 0,
+        eventsPropagation: true,
+        dx: 10
+    });
+
+
+    //infowindow test
+    circle.setInfoWindow({
+        content: 'hello world,circle',
+        title: 'message',
+        animationDuration: 0,
+        autoOpenOn: false
+    });
+    cesiumLayer.addPrimitive(circle);
 
     var layer = new maptalks.VectorLayer('v');
     layer.addGeometry(new maptalks.Marker(map.getCenter())).addTo(map);
+
+    var stats = new Stats();
+    map.getContainer().appendChild(stats.dom);
+
+    animation();
+    function animation() {
+        stats.update();
+        requestAnimationFrame(animation);
+    }
 </script>
+
 </html>

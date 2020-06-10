@@ -1,11 +1,36 @@
 import * as maptalks from 'maptalks';
 import * as Cesium from 'Cesium';
+export { default as Primitive } from './src/Primitive';
+export { default as Cesium3DTileset } from './src/Cesium3DTileset';
+
+const EVENTS = [
+    'mousemove',
+    'click',
+    'mousedown',
+    'mouseup',
+    'dblclick',
+    'contextmenu',
+    'touchstart',
+    'touchmove',
+    'touchend'
+];
+
+function cesiumCanvas(canvas) {
+    Object.defineProperty(canvas, 'clientWidth', {
+        get() { return canvas.width; }
+    });
+    Object.defineProperty(canvas, 'clientHeight', {
+        get() { return canvas.height; }
+    });
+
+}
+
 
 const options = {
-    sceneOptions : null,
-    forceRenderOnZooming : true,
-    forceRenderOnMoving : true,
-    forceRenderOnRotating : true
+    sceneOptions: null,
+    forceRenderOnZooming: true,
+    forceRenderOnMoving: true,
+    forceRenderOnRotating: true
 };
 
 export class CesiumLayer extends maptalks.CanvasLayer {
@@ -36,6 +61,182 @@ export class CesiumLayer extends maptalks.CanvasLayer {
         }
         return renderer.setToRedraw();
     }
+
+    /**
+   *
+   * @param {Coordinate} coordinate
+   * @param {Object} options
+   * @return {Array}
+   */
+    identify(coordinate, options) {
+        const scene = this.getCesiumScene();
+        if (!scene) {
+            return [];
+        }
+        if (!coordinate) {
+            console.error('coordinate is null,it should be Coordinate');
+            return [];
+        }
+        if (Array.isArray(coordinate)) {
+            coordinate = new maptalks.Coordinate(coordinate);
+        }
+        if (!(coordinate instanceof maptalks.Coordinate)) {
+            console.error('coordinate type is error,it should be Coordinate');
+            return [];
+        }
+        const p = this.getMap().coordToContainerPoint(coordinate);
+        const { x, y } = p;
+
+        let primitives = scene.pick(new Cesium.Cartesian2(x, y));
+        if (!primitives) {
+            return [];
+        }
+        primitives = [primitives];
+
+        options = maptalks.Util.extend({}, options);
+        const count = options.count;
+        return (maptalks.Util.isNumber(count) && count > 0 ? primitives.slice(0, count) : primitives);
+    }
+
+    // onSelect()
+
+
+    // eslint-disable-next-line no-unused-vars
+    _identifyPrimitiveEvents(e) {
+        const map = this.map || this.getMap();
+        map.resetCursor('default');
+        const { type, coordinate } = e;
+        const primitives = this.identify(coordinate).map(p => {
+            const { primitive } = p;
+            for (const key in p) {
+                if (key !== 'primitive') {
+                    primitive[key] = p[key];
+                }
+            }
+            return primitive;
+        });
+        if (primitives.length) {
+            map.setCursor('pointer');
+        }
+        if (type === 'mousemove') {
+            // mouseout objects
+            const outPrimitives = [];
+            if (this.selectPrimitives) {
+                this.selectPrimitives.forEach(primitive => {
+                    let isOut = true;
+                    primitives.forEach(p => {
+                        if (primitive === p) {
+                            isOut = false;
+                        }
+                    });
+                    if (isOut) {
+                        outPrimitives.push(primitive);
+                    }
+                });
+            }
+            outPrimitives.forEach(primitive => {
+                if (primitive._fire) {
+                    primitive._mouseover = false;
+                    primitive._fire('mouseout', Object.assign({}, e, { target: primitive, type: 'mouseout' }));
+                    // eslint-disable-next-line no-unused-expressions
+                    primitive.closeToolTip && primitive.closeToolTip();
+                } else if (this.onSelect) {
+                    this.onSelect(Object.assign({}, e, { target: primitive, type: 'mouseout' }));
+                }
+            });
+            primitives.forEach(primitive => {
+                if (primitive._fire) {
+                    if (!primitive._mouseover) {
+                        primitive._fire('mouseover', Object.assign({}, e, { target: primitive, type: 'mouseover' }));
+                        primitive._mouseover = true;
+                    }
+                    primitive._fire(type, Object.assign({}, e, { target: primitive }));
+                    // tooltip
+                    if (primitive.getToolTip) {
+                        const tooltip = primitive.getToolTip();
+                        if (tooltip && (!tooltip._owner)) {
+                            tooltip.addTo(primitive);
+                        }
+                        primitive.openToolTip(coordinate);
+                    }
+                } else if (this.onSelect) {
+                    if (!primitive._mouseover) {
+                        this.onSelect(Object.assign({}, e, { target: primitive, type: 'mouseover' }));
+                        primitive._mouseover = true;
+                    }
+                    this.onSelect(Object.assign({}, e, { target: primitive, type }));
+                }
+            });
+        } else {
+            primitives.forEach(primitive => {
+                if (primitive.fire) {
+                    primitive._fire(type, Object.assign({}, e, { target: primitive }));
+                    if (type === 'click') {
+                        if (primitive.getInfoWindow) {
+                            const infoWindow = primitive.getInfoWindow();
+                            if (infoWindow && (!infoWindow._owner)) {
+                                infoWindow.addTo(primitive);
+                            }
+                            primitive.openInfoWindow(coordinate);
+                        }
+                    }
+                } else if (this.onSelect) {
+                    this.onSelect(Object.assign({}, e, { target: primitive, type }));
+                }
+            });
+        }
+        this.selectPrimitives = primitives;
+        return this;
+    }
+
+    onAdd() {
+        super.onAdd();
+        const map = this.map || this.getMap();
+        if (!map) return this;
+        this.selectPrimitives = this.selectPrimitives || [];
+        EVENTS.forEach(event => {
+            map.on(event, this._identifyPrimitiveEvents, this);
+        });
+        return this;
+    }
+
+    onRemove() {
+        super.onRemove();
+        const map = this.map || this.getMap();
+        if (!map) return this;
+        EVENTS.forEach(event => {
+            map.off(event, this._identifyPrimitiveEvents, this);
+        });
+        return this;
+    }
+
+    addPrimitive(primitives) {
+        if (!Array.isArray(primitives)) {
+            primitives = [primitives];
+        }
+        const scene = this.getCesiumScene();
+        if (scene) {
+            primitives.forEach(primitive => {
+                primitive._layer = this;
+                scene.primitives.add(primitive);
+            });
+        }
+        return this;
+    }
+
+    removePrimitive(primitives) {
+        if (!Array.isArray(primitives)) {
+            primitives = [primitives];
+        }
+        const scene = this.getCesiumScene();
+        if (scene) {
+            primitives.forEach(primitive => {
+                scene.primitives.remove(primitive);
+            });
+        }
+        return this;
+    }
+
 }
 
 CesiumLayer.mergeOptions(options);
@@ -75,10 +276,14 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
     createContext() {
         const container = document.createElement('div');
         container.appendChild(this.canvas);
+        // this is adapt for cesium
+        // https://github.com/CesiumGS/cesium/blob/master/Source/Scene/SceneTransforms.js#L383
+        cesiumCanvas(this.canvas);
+
         let sceneOptions = this.layer.options.sceneOptions || {};
         sceneOptions = maptalks.Util.extend(sceneOptions, {
-            canvas : this.canvas,
-            scene3DOnly : true
+            canvas: this.canvas,
+            scene3DOnly: true
         });
         this.scene = new Cesium.Scene(sceneOptions);
         this.scene.fog.enabled = false;
@@ -188,7 +393,7 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
 
         /** @type {Cesium.optionsOrientation} */
         const orientation = {
-            pitch : pitch - Math.PI / 2,
+            pitch: pitch - Math.PI / 2,
             heading: toRadians(map.getBearing()),
             roll: undefined
         };

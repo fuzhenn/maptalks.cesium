@@ -11,7 +11,7 @@
   "module": "dist/maptalks.cesium.es.js",
   "jsnext:main": "dist/maptalks.cesium.es.js",
   "scripts": {
-    "lint": "eslint index.js test/**/*.js --fix",
+    "lint": "eslint index.js test/**/*.js src/**/*.js --fix",
     "test": "gulp test",
     "pretest": "npm run lint",
     "prepublish": "npm run lint && gulp minify",

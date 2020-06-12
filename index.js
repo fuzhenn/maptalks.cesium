@@ -169,7 +169,7 @@ export class CesiumLayer extends maptalks.CanvasLayer {
             });
         } else {
             primitives.forEach(primitive => {
-                if (primitive.fire) {
+                if (primitive._fire) {
                     primitive._fire(type, Object.assign({}, e, { target: primitive }));
                     if (type === 'click') {
                         if (primitive.getInfoWindow) {
@@ -241,7 +241,8 @@ export class CesiumLayer extends maptalks.CanvasLayer {
 
 CesiumLayer.mergeOptions(options);
 
-const backColor = [112, 112, 112, 255];
+// const backColor = [112, 112, 112, 255];
+const globalColor = new Cesium.Color(0.0, 0.0, 0.0, 0.0);
 
 class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
 
@@ -283,14 +284,20 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
         let sceneOptions = this.layer.options.sceneOptions || {};
         sceneOptions = maptalks.Util.extend(sceneOptions, {
             canvas: this.canvas,
-            scene3DOnly: true
+            scene3DOnly: true,
+            contextOptions: {
+                webgl: {
+                    alpha: true
+                }
+            }
         });
         this.scene = new Cesium.Scene(sceneOptions);
         this.scene.fog.enabled = false;
-        this.scene.backgroundColor = new Cesium.Color(backColor[0] / 255, backColor[1] / 255, backColor[2] / 255, 1);
+
+        this.scene.backgroundColor = globalColor;
         this.scene.camera.constrainedAxis = Cesium.Cartesian3.UNIT_Z;
         this.globe = new Cesium.Globe(Cesium.Ellipsoid.WGS84);
-        this.globe.baseColor = new Cesium.Color(backColor[0] / 255, backColor[1] / 255, backColor[2] / 255, 1);
+        this.globe.baseColor = globalColor;
         this.scene.globe = this.globe;
         // this.scene.globe.show = false;
         // this.scene.skyAtmosphere = new Cesium.SkyAtmosphere();
@@ -302,38 +309,38 @@ class CeisumLayerRenderer extends maptalks.renderer.CanvasRenderer {
         }
     }
 
-    getCanvasImage() {
-        const canvasImage = super.getCanvasImage();
-        if (!canvasImage || !canvasImage.image) {
-            return canvasImage;
-        }
-        const canvas = canvasImage.image;
-        if (!this.buffer) {
-            this.buffer = document.createElement('canvas');
-        }
-        const buffer = this.buffer;
-        const w = buffer.width = canvas.width;
-        const h = buffer.height = canvas.height;
-        const ctx = buffer.getContext('2d');
+    // getCanvasImage() {
+    //     const canvasImage = super.getCanvasImage();
+    //     if (!canvasImage || !canvasImage.image) {
+    //         return canvasImage;
+    //     }
+    //     const canvas = canvasImage.image;
+    //     if (!this.buffer) {
+    //         this.buffer = document.createElement('canvas');
+    //     }
+    //     const buffer = this.buffer;
+    //     const w = buffer.width = canvas.width;
+    //     const h = buffer.height = canvas.height;
+    //     const ctx = buffer.getContext('2d');
 
-        ctx.drawImage(canvas, 0, 0);
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const sourceData = imgData.data;
-        for (let i = 0, l = sourceData.length; i < l; i += 4) {
-            if (sourceData[i] === backColor[0] && sourceData[i + 1] === backColor[1] &&
-                sourceData[i + 2] === backColor[2] /* && sourceData[i + 3] === backColor[3] */) {
-                sourceData[i + 3] = 0;
-            } else if (this.layer.options['gray']) {
-                const gray = [sourceData[i] + sourceData[i + 1] + sourceData[i + 2]] / 3;
-                sourceData[i] = gray;
-                sourceData[i + 1] = gray;
-                sourceData[i + 2] = gray;
-            }
-        }
-        ctx.putImageData(imgData, 0, 0);
-        canvasImage.image = buffer;
-        return canvasImage;
-    }
+    //     ctx.drawImage(canvas, 0, 0);
+    //     const imgData = ctx.getImageData(0, 0, w, h);
+    //     const sourceData = imgData.data;
+    //     for (let i = 0, l = sourceData.length; i < l; i += 4) {
+    //         if (sourceData[i] === backColor[0] && sourceData[i + 1] === backColor[1] &&
+    //             sourceData[i + 2] === backColor[2] /* && sourceData[i + 3] === backColor[3] */) {
+    //             sourceData[i + 3] = 0;
+    //         } else if (this.layer.options['gray']) {
+    //             const gray = [sourceData[i] + sourceData[i + 1] + sourceData[i + 2]] / 3;
+    //             sourceData[i] = gray;
+    //             sourceData[i + 1] = gray;
+    //             sourceData[i + 2] = gray;
+    //         }
+    //     }
+    //     ctx.putImageData(imgData, 0, 0);
+    //     canvasImage.image = buffer;
+    //     return canvasImage;
+    // }
 
     resizeCanvas(canvasSize) {
         super.resizeCanvas(canvasSize);

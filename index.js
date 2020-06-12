@@ -30,7 +30,8 @@ const options = {
     sceneOptions: null,
     forceRenderOnZooming: true,
     forceRenderOnMoving: true,
-    forceRenderOnRotating: true
+    forceRenderOnRotating: true,
+    geometryEvents: false
 };
 
 export class CesiumLayer extends maptalks.CanvasLayer {
@@ -103,9 +104,19 @@ export class CesiumLayer extends maptalks.CanvasLayer {
 
     // eslint-disable-next-line no-unused-vars
     _identifyPrimitiveEvents(e) {
+        if (!this.options.geometryEvents) {
+            return this;
+        }
         const map = this.map || this.getMap();
-        map.resetCursor('default');
         const { type, coordinate } = e;
+        const now = maptalks.Util.now();
+        if (this._mousemoveTimeOut && type === 'mousemove') {
+            if (now - this._mousemoveTimeOut < 16) {
+                return this;
+            }
+        }
+        this._mousemoveTimeOut = now;
+        map.resetCursor('default');
         const primitives = this.identify(coordinate).map(p => {
             const { primitive } = p;
             for (const key in p) {

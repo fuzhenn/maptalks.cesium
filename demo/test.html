@@ -45,7 +45,7 @@
         })
     });
 
-    var cesiumLayer = new maptalks.CesiumLayer('cesium', { gray: false }).addTo(map);
+    var cesiumLayer = new maptalks.CesiumLayer('cesium', { gray: false, geometryEvents: true }).addTo(map);
 
     cesiumLayer.onSelect = function (e) {
         console.log(e);

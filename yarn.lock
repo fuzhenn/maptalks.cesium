@@ -706,9 +706,9 @@ caseless@~0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/caseless/-/caseless-0.12.0.tgz#1b681c21ff84033c826543090689420d187151dc"
 
-cesium@^1.37.0:
-  version "1.37.0"
-  resolved "https://registry.yarnpkg.com/cesium/-/cesium-1.37.0.tgz#afeaeca7c327338c063a431c315ea16192f801e3"
+cesium@1.35.1:
+  version "1.35.1"
+  resolved "https://registry.yarnpkg.com/cesium/-/cesium-1.35.1.tgz#4103ad6bd9551610c06b61955ab2f2b84f026068"
   dependencies:
     requirejs "^2.3.2"
 
@@ -3329,8 +3329,8 @@ string_decoder@~1.0.3:
     safe-buffer "~5.1.0"
 
 stringstream@~0.0.4:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/stringstream/-/stringstream-0.0.5.tgz#4e484cd4de5a0bbbee18e46307710a8a81621878"
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/stringstream/-/stringstream-0.0.6.tgz#7880225b0d4ad10e30927d167a1d6f2fd3b33a72"
 
 strip-ansi@^3.0.0, strip-ansi@^3.0.1:
   version "3.0.1"

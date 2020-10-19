@@ -226,6 +226,7 @@ var CesiumLayer = function (_maptalks$CanvasLayer) {
     CesiumLayer.prototype._identifyPrimitiveEvents = function _identifyPrimitiveEvents(e) {
         var _this2 = this;
 
+<<<<<<< HEAD
         if (!this.options.geometryEvents) {
             return this;
         }
@@ -241,6 +242,13 @@ var CesiumLayer = function (_maptalks$CanvasLayer) {
         }
         this._mousemoveTimeOut = now;
         map.resetCursor('default');
+=======
+        var map = this.map || this.getMap();
+        map.resetCursor('default');
+        var type = e.type,
+            coordinate = e.coordinate;
+
+>>>>>>> upstream/master
         var primitives = this.identify(coordinate).map(function (p) {
             var primitive = p.primitive;
 

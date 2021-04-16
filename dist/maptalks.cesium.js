@@ -1,7 +1,7 @@
 /*!
  * maptalks.cesium v0.0.0
  * LICENSE : MIT
- * (c) 2016-2020 maptalks.org
+ * (c) 2016-2021 maptalks.org
  */
 /*!
  * requires maptalks@<2.0.0 
@@ -140,7 +140,8 @@ var options = {
     sceneOptions: null,
     forceRenderOnZooming: true,
     forceRenderOnMoving: true,
-    forceRenderOnRotating: true
+    forceRenderOnRotating: true,
+    geometryEvents: false
 };
 
 var CesiumLayer = function (_maptalks$CanvasLayer) {
@@ -228,11 +229,21 @@ var CesiumLayer = function (_maptalks$CanvasLayer) {
     CesiumLayer.prototype._identifyPrimitiveEvents = function _identifyPrimitiveEvents(e) {
         var _this2 = this;
 
+        if (!this.options.geometryEvents) {
+            return this;
+        }
         var map = this.map || this.getMap();
-        map.resetCursor('default');
         var type = e.type,
             coordinate = e.coordinate;
 
+        var now = maptalks.Util.now();
+        if (this._mousemoveTimeOut && type === 'mousemove') {
+            if (now - this._mousemoveTimeOut < 16) {
+                return this;
+            }
+        }
+        this._mousemoveTimeOut = now;
+        map.resetCursor('default');
         var primitives = this.identify(coordinate).map(function (p) {
             var primitive = p.primitive;
 
@@ -554,12 +565,12 @@ var CeisumLayerRenderer = function (_maptalks$renderer$Ca) {
     };
 
     CeisumLayerRenderer.prototype._calcDistance = function _calcDistance(map) {
-        var canvas = this.canvas;
+        // const canvas = this.canvas;
         var fov = this.scene.camera.frustum.fov; // horizontal field of view
 
         var c = map.getCenter();
-        var b = map.locateByPoint(c, -canvas.width / 2, 0);
-        var e = map.locateByPoint(c, canvas.width / 2, 0);
+        var b = map.locateByPoint(c, -map.width / 2, 0);
+        var e = map.locateByPoint(c, map.width / 2, 0);
         var requiredDistance = map.computeLength(e, b) / 2 / Math.tan(fov / 2);
 
         return requiredDistance;

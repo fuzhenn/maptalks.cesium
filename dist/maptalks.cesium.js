@@ -567,11 +567,9 @@ var CeisumLayerRenderer = function (_maptalks$renderer$Ca) {
     CeisumLayerRenderer.prototype._calcDistance = function _calcDistance(map) {
         // const canvas = this.canvas;
         var fov = this.scene.camera.frustum.fov; // horizontal field of view
-
-        var size = this.getMap().getSize();
         var c = map.getCenter();
-        var b = map.locateByPoint(c, -size.width / 2, 0);
-        var e = map.locateByPoint(c, size.width / 2, 0);
+        var b = map.locateByPoint(c, -map.width / 2, 0);
+        var e = map.locateByPoint(c, map.width / 2, 0);
         var requiredDistance = map.computeLength(e, b) / 2 / Math.tan(fov / 2);
 
         return requiredDistance;
